@@ -12,6 +12,8 @@ public class Interface {
     private JTextArea outputArea;
     private JLabel imageLabel;
     private DatabaseButton databaseButton;
+    private String weatherStatus;
+    public String imagePath = "fail.png";
 
     public Interface() {
         frame = new JFrame("Weather");
@@ -33,18 +35,12 @@ public class Interface {
         JPanel imagePanel = new JPanel();
         imageLabel = new JLabel();
         imageLabel.setPreferredSize(new Dimension(200, 200));
-        String imagePath = "snow.png";
-        ImageIcon imageIcon = new ImageIcon(imagePath);
-        Image image = imageIcon.getImage();
-        Image resizedImage = image.getScaledInstance(100, 100, Image.SCALE_DEFAULT);
-        ImageIcon resizedImageIcon = new ImageIcon(resizedImage);
-        imageLabel.setIcon(resizedImageIcon);
 
         JPanel buttonPanel = new JPanel();
-        databaseButton = new DatabaseButton("Search in DB");
+        databaseButton = new DatabaseButton("Поиск в базе данных");
 
         // Добавляем слушателей на элементы =>
-        SearchButton changeSearchButton = new SearchButton(searchField, outputArea);
+        SearchButton changeSearchButton = new SearchButton(searchField, outputArea, imageLabel,null);
         searchButton.addActionListener(changeSearchButton);
 
         // Добавление элементов в панели =>
@@ -84,25 +80,48 @@ public class Interface {
         JTextField queryField = new JTextField(10);
         JButton searchInDbButton = new JButton("Поиск");
 
+        searchInDbButton.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (queryField.getText().trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(null, "Поле поиска пустое", "Предупреждение", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                String city = queryField.getText();
+                WeatherDataWriter weatherDataWriter = new WeatherDataWriter();
+                String weatherData = weatherDataWriter.retrieveWeatherDataFromDatabase(city);
+                outputArea.setText(weatherData);
+
+                String[] lines = weatherData.split("\n");
+
+                for (String line : lines) {
+                    if (line.contains("Погода: ")) {
+                        String weatherLine = line.replace("Погода: ", "").trim();
+                        int startIndex = weatherLine.indexOf("Weather state: ") + "Weather state: ".length();
+                        int endIndex = weatherLine.indexOf("(");
+                        weatherStatus = weatherLine.substring(startIndex, endIndex).trim();
+                        break;
+
+                    }
+                }// Проверка если ли в бд данный город
+                if (weatherStatus != null) {
+                    ImageUpdater.updateImage(imageLabel, weatherStatus);
+                } else {
+                    JOptionPane.showMessageDialog(null, "Данного города нет в базе данных", "Warning", JOptionPane.WARNING_MESSAGE);
+                }
+                dialogFrame.dispose();
+            }
+        });
 
         inputPanel.add(label);
         inputPanel.add(queryField);
         inputPanel.add(searchInDbButton);
 
-        //searchButton = new SearchButton("Поиск");
-        //searchButton.addActionPerformed(new SearchButton(searchButton));
-
         dialogFrame.add(inputPanel, BorderLayout.CENTER);
         dialogFrame.setVisible(true);
     }
-
-    private void performDatabaseSearch(String query) {
-        // Здесь обрабатывается запрос в базу данных и обновляются данные в outputArea
-        String result = "Результат поиска по запросу \"" + query + "\"";
-        outputArea.setText(result); // Обновляем данные в outputArea
-    }
-
-
 
 
     private class DatabaseButton extends JButton {
@@ -116,19 +135,6 @@ public class Interface {
             });
         }
     }
-    private class searchInDbButton extends JButton {
-        public searchInDbButton(String text) {
-            super(text);
-            addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-
-                }
-            });
-        }
-    }
-
-
     public static void main(String[] args) {
         SwingUtilities.invokeLater(Interface::new);
     }

@@ -1,3 +1,4 @@
+/*
 package org.example;
 
 import com.github.prominence.openweathermap.api.OpenWeatherMapClient;
@@ -20,4 +21,4 @@ public class CustomOpenWeatherMapClient {
         WeatherDataWriter weatherDataWriter = new WeatherDataWriter();
         weatherDataWriter.writeWeatherData(weather);
     }
-}
+}*/
